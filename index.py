@@ -6,31 +6,54 @@ from pandas_datareader import data as pdr
 import yfinance as yf
 yf.pdr_override()
 
+nombre_actions = int(input('''Quelle est le nombre d'action souhaité : '''))
+start = input('Date de départ (YYYY-MM-DD) : ')
+end = input('Date de fin (YYYY-MM-DD) : ')
 
 #import data
-def GetStocksPrice(stocks,start,end):
-    stocks =pdr.get_data_yahoo(stocks,start=start,end=end)
-    stocks = pd.DataFrame(stocks['Close'])
-    return stocks 
+def GetStocksData(stock,start,end):
+    stock = pdr.get_data_yahoo(stock,start=start,end=end)
+    stock = pd.DataFrame(stock['Close'])
+    return(stock)
 
-#concat 
-def concatener_series_temporelles(*series_temporelles):
-    return pd.concat(series_temporelles,axis=1)
-
-
-start = datetime.datetime(2018,1,1)
-end = datetime.datetime(2022,1,1)
-
-nombre_actions = int(input("Entrez le  nombre d'actions souhaité : "))
-
+stocks_arr = pd.DataFrame()
 nom_actions = []
-
+#concat
 for i in range(nombre_actions):
-    nom_action = input(f'''entrez le nom de l'action {i+1} :''')
-    nom_actions.append(nom_action)
+    nom_action = str(input(f"Nom de la {i+1}ème action : "))
+    stocks_arr[nom_action] = GetStocksData(nom_action,start,end)
+    
+print(stocks_arr.head())
 
-series_temporelles = [GetStocksPrice(action, start, end) for action in nom_actions]
-resultat_concatenation = concatener_series_temporelles(*series_temporelles)
+#optimisation et algorithme de Sharpe avec Monte Carlo
+np.random.seed(1)
 
-print(resultat_concatenation)
+log_ret = np.log(stocks_arr/stocks_arr.shift(1))
 
+nbr_exp = int(input('''nombre d'expérience souhaitée pour la simulation de Monte Carlo : '''))
+all_weights = np.zeros([nbr_exp,nombre_actions])
+ret_arr = np.zeros(nbr_exp)
+vol_arr = np.zeros(nbr_exp)
+sharpe_arr = np.zeros(nbr_exp)
+
+for ind in range(nbr_exp):
+    
+    weights = np.array(np.random.random(nombre_actions))
+    weights = weights/weights.sum()
+
+    all_weights[ind,:] = weights
+
+    ret_arr[ind] = np.sum(log_ret.mean() * weights * 252)
+    vol_arr[ind] = np.sqrt((np.dot(weights.T,np.dot(log_ret.cov(),weights*252))))
+
+    sharpe_arr[ind] = ret_arr[ind]/vol_arr[ind]
+
+ret_max = ret_arr[sharpe_arr.argmax()]
+vol_max = vol_arr[sharpe_arr.argmax()]
+
+#Représentation graphique
+plt.figure(figsize=(12,8))
+plt.scatter(vol_arr,ret_arr,c=sharpe_arr)
+plt.colorbar(label='Ratio de Sharpe')
+plt.scatter(vol_max,ret_max,c='red',edgecolors='black',s=50)
+plt.show()
