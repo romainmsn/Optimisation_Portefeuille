@@ -57,3 +57,23 @@ plt.scatter(vol_arr,ret_arr,c=sharpe_arr)
 plt.colorbar(label='Ratio de Sharpe')
 plt.scatter(vol_max,ret_max,c='red',edgecolors='black',s=50)
 plt.show()
+
+
+#optimisation
+def get_ret_vol_sr(weights):
+    weights = np.array(weights)
+    ret = np.sum(log_ret.mean() * weights * 252)
+    vol = np.sqrt(np.dot(weights.T,np.dot(log_ret.cov()*252,weights)))
+    sr = ret/vol
+
+def neg_sharpe(weights):
+    return get_ret_vol_sr(weights)[2] * (-1)
+
+def check_sum(weights):
+    #retourne 0 si la somme des poids vaut 1 
+    return np.sum(weights) - 1
+
+cons = ({'type' : 'eq','fun':check_sum})
+bounds = tuple((0,1) for i in range(nombre_actions))
+init_guess = np.ones(nombre_actions) * (1/nombre_actions)
+opt_results = minimize(neg_sharpe,init_guess)
