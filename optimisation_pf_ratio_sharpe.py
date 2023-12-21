@@ -52,7 +52,9 @@ for ind in range(nbr_exp):
 
 ret_max = ret_arr[sharpe_arr.argmax()]
 vol_max = vol_arr[sharpe_arr.argmax()]
-print(f"La valeur du ratio de sharpe maximale pour {nbr_exp} expériences est : {sharpe_arr.argmax()}")
+print("Optimisation avec méthode de Montecarlo : ")
+print(f"La valeur du ratio de sharpe maximale pour {nbr_exp} expériences est : {sharpe_arr.max()}")
+print(f"la répartition des poids optimales est : {all_weights[sharpe_arr.argmax(),:]} ")
 
 #Représentation graphique
 plt.figure(figsize=(12,8))
@@ -68,6 +70,7 @@ def get_ret_vol_sr(weights):
     ret = np.sum(log_ret.mean() * weights * 252)
     vol = np.sqrt(np.dot(weights.T,np.dot(log_ret.cov()*252,weights)))
     sr = ret/vol
+    return np.array([vol, ret, sr])
 
 def neg_sharpe(weights):
     return get_ret_vol_sr(weights)[2] * (-1)
@@ -80,9 +83,10 @@ cons = ({'type' : 'eq','fun':check_sum})
 bounds = tuple((0,1) for i in range(nombre_actions))
 init_guess = np.ones(nombre_actions) * (1/nombre_actions)
 opt_results = minimize(neg_sharpe,init_guess,method='SLSQP',bounds=bounds,constraints=cons)
+print("optimisation avec la méthode des moindres carrés : ")
 print("Allocation optimale des titres : ")
 print(opt_results.x)
 print("Valeurs maximales du ratio de Sharpe : ")
-get_ret_vol_sr(opt_results.x)
+print(get_ret_vol_sr(opt_results.x)[2])
 
 #Frontière efficiente (pf avec le meilleur rendement pour un risque défini)
