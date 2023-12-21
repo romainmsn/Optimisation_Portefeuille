@@ -5,12 +5,13 @@ import datetime
 from pandas_datareader import data as pdr
 import yfinance as yf
 yf.pdr_override()
+from scipy.optimize import minimize
 
 nombre_actions = int(input('''Quelle est le nombre d'action souhaité : '''))
 start = input('Date de départ (YYYY-MM-DD) : ')
 end = input('Date de fin (YYYY-MM-DD) : ')
 
-#import data
+#import les datas sur le prix des actions 
 def GetStocksData(stock,start,end):
     stock = pdr.get_data_yahoo(stock,start=start,end=end)
     stock = pd.DataFrame(stock['Close'])
@@ -18,14 +19,15 @@ def GetStocksData(stock,start,end):
 
 stocks_arr = pd.DataFrame()
 nom_actions = []
-#concat
+
+#Concaténation pour obtention d'un DataFrame des prix des différentes actions à la cloture
 for i in range(nombre_actions):
     nom_action = str(input(f"Nom de la {i+1}ème action : "))
     stocks_arr[nom_action] = GetStocksData(nom_action,start,end)
     
 print(stocks_arr.head())
 
-#optimisation et algorithme de Sharpe avec Monte Carlo
+#optimisation et algorithme de Sharpe avec méthode de Monte Carlo
 np.random.seed(1)
 
 log_ret = np.log(stocks_arr/stocks_arr.shift(1))
@@ -50,6 +52,7 @@ for ind in range(nbr_exp):
 
 ret_max = ret_arr[sharpe_arr.argmax()]
 vol_max = vol_arr[sharpe_arr.argmax()]
+print(f"La valeur du ratio de sharpe maximale pour {nbr_exp} expériences est : {sharpe_arr.argmax()}")
 
 #Représentation graphique
 plt.figure(figsize=(12,8))
@@ -59,7 +62,7 @@ plt.scatter(vol_max,ret_max,c='red',edgecolors='black',s=50)
 plt.show()
 
 
-#optimisation
+#optimisation avec la méthode de minimisation (moindres carrés)
 def get_ret_vol_sr(weights):
     weights = np.array(weights)
     ret = np.sum(log_ret.mean() * weights * 252)
@@ -76,4 +79,10 @@ def check_sum(weights):
 cons = ({'type' : 'eq','fun':check_sum})
 bounds = tuple((0,1) for i in range(nombre_actions))
 init_guess = np.ones(nombre_actions) * (1/nombre_actions)
-opt_results = minimize(neg_sharpe,init_guess)
+opt_results = minimize(neg_sharpe,init_guess,method='SLSQP',bounds=bounds,constraints=cons)
+print("Allocation optimale des titres : ")
+print(opt_results.x)
+print("Valeurs maximales du ratio de Sharpe : ")
+get_ret_vol_sr(opt_results.x)
+
+#Frontière efficiente (pf avec le meilleur rendement pour un risque défini)
