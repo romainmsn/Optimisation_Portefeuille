@@ -60,6 +60,9 @@ print(f"la répartition des poids optimales est : {all_weights[sharpe_arr.argmax
 plt.figure(figsize=(12,8))
 plt.scatter(vol_arr,ret_arr,c=sharpe_arr)
 plt.colorbar(label='Ratio de Sharpe')
+plt.xlabel('Volatilité')
+plt.ylabel('Rendement')
+plt.title('Ratio de Sharpe')
 plt.scatter(vol_max,ret_max,c='red',edgecolors='black',s=50)
 plt.show()
 
@@ -70,7 +73,7 @@ def get_ret_vol_sr(weights):
     ret = np.sum(log_ret.mean() * weights * 252)
     vol = np.sqrt(np.dot(weights.T,np.dot(log_ret.cov()*252,weights)))
     sr = ret/vol
-    return np.array([vol, ret, sr])
+    return np.array([ret, vol, sr])
 
 def neg_sharpe(weights):
     return get_ret_vol_sr(weights)[2] * (-1)
@@ -89,4 +92,30 @@ print(opt_results.x)
 print("Valeurs maximales du ratio de Sharpe : ")
 print(get_ret_vol_sr(opt_results.x)[2])
 
-#Frontière efficiente (pf avec le meilleur rendement pour un risque défini)
+#Frontière efficiente (Optimisation de pf de Markowitz)
+
+frontier_y = np.linspace(ret_arr.min(),ret_arr.max(),100)
+frontier_vol = []
+
+def minimize_vol(weights):
+    return get_ret_vol_sr(weights)[1]
+
+for possible_return in frontier_y:
+    cons = ({'type' : 'eq','fun' : check_sum},{'type' : 'eq','fun' : lambda w:get_ret_vol_sr(w)[0]-possible_return})
+    result = minimize(minimize_vol,init_guess,method='SLSQP',bounds=bounds,constraints=cons)
+    if result is not None and hasattr(result, 'fun'):
+        frontier_vol.append(result.fun)
+    else:
+        print(f"La minimisation pour le rendement {possible_return} a échoué.")
+
+#Représentation graphique de la frontière efficiente
+
+plt.figure(figsize=(12,8))
+plt.scatter(vol_arr,ret_arr,c=sharpe_arr)
+plt.colorbar(label='Ratio de Sharpe')
+plt.scatter(vol_max,ret_max,c='red',edgecolors='black',s=50)
+plt.xlabel('Volatilité')
+plt.ylabel('Rendement')
+plt.title('Optimisation de Markowitz')
+plt.plot(frontier_vol,frontier_y,'g--',linewidth=3)
+plt.show()
