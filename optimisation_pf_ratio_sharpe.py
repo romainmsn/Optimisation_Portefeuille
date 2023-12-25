@@ -90,7 +90,7 @@ print("optimisation avec la méthode des moindres carrés : ")
 print("Allocation optimale des titres : ")
 print(opt_results.x)
 print("Valeurs maximales du ratio de Sharpe : ")
-print(get_ret_vol_sr(opt_results.x)[2])
+print(get_ret_vol_sr(opt_results.x))
 
 #Frontière efficiente (Optimisation de pf de Markowitz)
 
