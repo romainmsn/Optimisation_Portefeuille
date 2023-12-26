@@ -101,8 +101,8 @@ def minimize_vol(weights):
     return get_ret_vol_sr(weights)[1]
 
 for possible_return in frontier_y:
-    cons = ({'type' : 'eq','fun' : check_sum},{'type' : 'eq','fun' : lambda w:get_ret_vol_sr(w)[0]-possible_return})
-    result = minimize(minimize_vol,init_guess,method='SLSQP',bounds=bounds,constraints=cons)
+    cons_2 = ({'type' : 'eq','fun' : check_sum},{'type' : 'eq','fun' : lambda w:get_ret_vol_sr(w)[0]-possible_return})
+    result = minimize(minimize_vol,init_guess,method='SLSQP',bounds=bounds,constraints=cons_2)
     if result is not None and hasattr(result, 'fun'):
         frontier_vol.append(result.fun)
     else:
