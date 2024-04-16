@@ -121,4 +121,4 @@ level_of_confidence = 95
 percentile = 100 - level_of_confidence
 var_95 = np.percentile(sorted_returns, percentile)
 
-print(f"Il y a 5% de chance que la perte journalière du portefeuille soit supérieure à {round(var_95,2)*(-1)*100} %")
+print(f'Il y a 5% de chance que la perte journalière du portefeuille soit supérieure à {round(var_95,2)*(-1)*100} %')
